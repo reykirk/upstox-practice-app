@@ -2,10 +2,11 @@ const BACKEND =
   "https://jkupstox-backend.onrender.com";
 
 let chart;
+let liveStream;
 
 const $ = id => document.getElementById(id);
 
-async function callBackend(path) {
+async function request(path) {
   const response = await fetch(BACKEND + path);
   const result = await response.json().catch(() => ({}));
 
@@ -20,9 +21,9 @@ async function callBackend(path) {
   return result;
 }
 
-async function checkConnection() {
+async function checkStatus() {
   try {
-    const result = await callBackend("/api/status");
+    const result = await request("/api/status");
 
     $("status").textContent = result.connected
       ? " Connected"
@@ -36,76 +37,60 @@ $("connect").onclick = () => {
   location.href = BACKEND + "/auth/upstox/login";
 };
 
-$("load").onclick = async () => {
+$("historical").onclick = async () => {
   try {
     $("status").textContent =
       "Loading real historical data...";
 
-    const instrumentKey =
-      encodeURIComponent(
-        $("instrument").value.trim()
-      );
-
-    const numberOfDays =
-      Number($("days").value || 30);
-
-    const to = new Date();
-
-    const from = new Date(
-      Date.now() - numberOfDays * 86400000
+    const key = encodeURIComponent(
+      $("histKey").value.trim()
     );
 
-    const formatDate = date =>
-      date.toISOString().slice(0, 10);
+    const days = Number($("days").value || 30);
+    const unit = $("unit").value;
 
-    const result = await callBackend(
+    const to = new Date();
+    const from = new Date(
+      Date.now() - days * 86400000
+    );
+
+    const date = d => d.toISOString().slice(0, 10);
+
+    const result = await request(
       `/api/historical?` +
-      `instrument_key=${instrumentKey}` +
-      `&unit=days` +
+      `instrument_key=${key}` +
+      `&unit=${unit}` +
       `&interval=1` +
-      `&to=${formatDate(to)}` +
-      `&from=${formatDate(from)}`
+      `&to=${date(to)}` +
+      `&from=${date(from)}`
     );
 
     const candles = result.data?.candles || [];
 
     if (!candles.length) {
       throw new Error(
-        "Upstox returned no candles."
+        "Upstox returned no historical candles."
       );
     }
 
-    const orderedCandles =
-      candles.slice().reverse();
+    const ordered = candles.slice().reverse();
 
-    if (chart) {
-      chart.destroy();
-    }
+    if (chart) chart.destroy();
 
-    chart = new Chart(
-      $("chart"),
-      {
-        type: "line",
-        data: {
-          labels: orderedCandles.map(
-            candle => candle[0]
-          ),
-          datasets: [
-            {
-              label: "Real close price",
-              data: orderedCandles.map(
-                candle => candle[4]
-              ),
-              borderColor: "#22c55e",
-              tension: 0.15
-            }
-          ]
-        },
-        options: {
-          responsive: true
-        }
+    chart = new Chart($("chart"), {
+      type: "line",
+      data: {
+        labels: ordered.map(candle => candle[0]),
+        datasets: [{
+          label: "Real close price",
+          data: ordered.map(candle => candle[4]),
+          borderColor: "#16a34a"
+        }]
+      },
+      options: {
+        responsive: true
       }
-    );
+    });
 
     $("status").textContent =
       `Loaded ${candles.length} real candles`;
@@ -116,35 +101,69 @@ $("load").onclick = async () => {
 
 $("chain").onclick = async () => {
   try {
-    const expiry = $("expiry").value;
+    const key = encodeURIComponent(
+      $("chainKey").value.trim()
+    );
 
-    if (!expiry) {
-      throw new Error(
-        "Select a valid expiry date."
-      );
-    }
+    const expiry = encodeURIComponent(
+      $("expiry").value.trim()
+    );
 
-    const instrumentKey =
-      encodeURIComponent(
-        $("instrument").value.trim()
-      );
-
-    const result = await callBackend(
+    const result = await request(
       `/api/option-chain?` +
-      `instrument_key=${instrumentKey}` +
+      `instrument_key=${key}` +
       `&expiry_date=${expiry}`
     );
 
-    $("chainOut").textContent =
+    $("output").textContent =
       JSON.stringify(
         result.data || result,
         null,
         2
       );
   } catch (error) {
-    $("chainOut").textContent =
-      error.message;
+    $("output").textContent = error.message;
   }
 };
 
-checkConnection();
+$("live").onclick = () => {
+  if (liveStream) {
+    liveStream.close();
+  }
+
+  const key = encodeURIComponent(
+    $("liveKey").value.trim()
+  );
+
+  $("ltp").textContent =
+    "Waiting for live tick...";
+
+  liveStream = new EventSource(
+    `${BACKEND}/api/live?instrument_keys=${key}`
+  );
+
+  liveStream.onmessage = event => {
+    try {
+      const message = JSON.parse(event.data);
+      const feed =
+        Object.values(message.feeds || {})[0];
+
+      const ltp = feed?.ltpc?.ltp;
+
+      if (ltp !== undefined) {
+        $("ltp").textContent =
+          `Live LTP: ${ltp}`;
+      }
+    } catch (error) {
+      $("ltp").textContent =
+        "Live data decoding error";
+    }
+  };
+
+  liveStream.onerror = () => {
+    $("ltp").textContent =
+      "Live feed disconnected";
+  };
+};
+
+checkStatus();
