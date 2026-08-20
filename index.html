@@ -1,48 +1,52 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Upstox Practice App</title>
+  <title>Upstox Live Practice</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body{margin:0;background:#0f172a;color:#e5e7eb;font:15px Arial}
+    main{max-width:950px;margin:auto;padding:18px}
+    section{background:#1e293b;padding:15px;margin-top:15px;border-radius:10px}
+    input,select,button{padding:9px;margin:5px 3px}
+    button{background:#22c55e;color:white;border:0;border-radius:5px}
+    canvas{background:white;margin-top:10px}
+    pre{white-space:pre-wrap;max-height:430px;overflow:auto;background:#020617;padding:10px}
+  </style>
 </head>
 <body>
   <main>
-    <h1>Upstox Practice App</h1>
+    <h1>Upstox Live Practice</h1>
 
     <button id="connect">Connect Upstox</button>
-    <span id="status">Checking connection...</span>
+    <span id="status">Checking...</span>
 
     <section>
       <h2>Historical chart</h2>
-
-      <label>
-        Instrument key
-        <input id="instrument" value="NSE_INDEX|Nifty 50">
-      </label>
-
-      <label>
-        Days
-        <input id="days" type="number" min="1" max="365" value="30">
-      </label>
-
-      <button id="load">Load historical data</button>
-
+      <input id="histKey" value="NSE_INDEX|Nifty 50">
+      <select id="unit">
+        <option value="days">Daily</option>
+        <option value="minutes">1-minute</option>
+      </select>
+      <input id="days" type="number" value="30" min="1">
+      <button id="historical">Load historical</button>
       <canvas id="chart"></canvas>
     </section>
 
     <section>
       <h2>Option chain</h2>
-
-      <label>
-        Expiry date
-        <input id="expiry" type="date">
-      </label>
-
+      <input id="chainKey" value="NSE_INDEX|Nifty 50">
+      <input id="expiry" value="current_week">
       <button id="chain">Load option chain</button>
+      <pre id="output"></pre>
+    </section>
 
-      <pre id="chainOut"></pre>
+    <section>
+      <h2>Live price</h2>
+      <input id="liveKey" value="NSE_INDEX|Nifty 50">
+      <button id="live">Start live price</button>
+      <div id="ltp">Not started</div>
     </section>
   </main>
 
