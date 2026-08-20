@@ -1,14 +1,50 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<link rel="stylesheet" href="style.css">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Upstox Practice App</title>
-</link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
 <body>
-  <h1>Upstox Practice App</h1>
-  <button id="loadHistorical">Load Historical Data</button>
-  <p id="status">Not loaded</p>
+  <main>
+    <h1>Upstox Practice App</h1>
+
+    <button id="connect">Connect Upstox</button>
+    <span id="status">Checking connection...</span>
+
+    <section>
+      <h2>Historical chart</h2>
+
+      <label>
+        Instrument key
+        <input id="instrument" value="NSE_INDEX|Nifty 50">
+      </label>
+
+      <label>
+        Days
+        <input id="days" type="number" min="1" max="365" value="30">
+      </label>
+
+      <button id="load">Load historical data</button>
+
+      <canvas id="chart"></canvas>
+    </section>
+
+    <section>
+      <h2>Option chain</h2>
+
+      <label>
+        Expiry date
+        <input id="expiry" type="date">
+      </label>
+
+      <button id="chain">Load option chain</button>
+
+      <pre id="chainOut"></pre>
+    </section>
+  </main>
 
   <script src="script.js"></script>
 </body>
